@@ -1,0 +1,18 @@
+import os
+from openpyxl import load_workbook
+
+# Ścieżka do folderu z plikami Excela
+folder_path = 'Pliki/'
+
+# Lista plików w folderze
+file_list = ['test.xlsx', 'test2.xlsx', 'test3.xlsx']  # Dodaj więcej plików, jeśli potrzebujesz
+
+for file_name in file_list:
+    try:
+        workbook = load_workbook(filename=os.path.join(folder_path, file_name))
+        ws = workbook.active
+        ws["A201"] = "Hello"
+        workbook.save(filename=file_name)
+        print(f"Pomyślnie zapisano w pliku {file_name}.")
+    except Exception as e:
+        print(f"Błąd w pliku {file_name}: {e}")

@@ -1,6 +1,7 @@
 import os
 import openpyxl
 import datetime
+from datetime import timedelta
 from openpyxl import load_workbook
 from openpyxl.styles import NamedStyle
 from openpyxl.styles.numbers import FORMAT_PERCENTAGE
@@ -10,16 +11,15 @@ from openpyxl.styles import Font, PatternFill
 
 
 
-
 #data
 today = datetime.datetime.now().strftime('%Y-%m-%d')
-
+yesterday = (datetime.datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
 # Ścieżka do folderu z plikami Excela
-folder_path = 'Monitoring_SC/'
-if not os.path.exists('Monitoring_SC/Podzielone/' + today):
-    os.makedirs('Monitoring_SC/Podzielone/' + today)
-folder_path2 = 'Monitoring_SC/Podzielone/' + today
+folder_path = r"\\lokalizacja\\"
+if not os.path.exists(r"\\lokalizacja_podzielone\\" + today):
+    os.makedirs(r"\\lokalizacja_podzielone\\" + today)
+folder_path2 = r"\\lokalizacja_podzielone\\" + today
 print("Zakończono tworzenie folderu")
 # Lista plików w folderze
 file_name = 'Monitoring-SC.xlsx'  # Dodaj więcej plików, jeśli potrzebujesz
@@ -39,12 +39,14 @@ for client in unique_clients:
     new_ws = new_workbook.active
         # nagłówki
     for col_num, cell in enumerate(ws[1], start=1):
-        new_ws.cell(row=1, column=col_num, value=cell.value)
+        if col_num < len(ws[1]): 
+            new_ws.cell(row=1, column=col_num, value=cell.value)
         # Skopiuj dane tylko dla danego klienta
     for row_num, row in enumerate(ws.iter_rows(min_row=2), start=2):
         if row[0].value == client:
             for col_num, cell in enumerate(row, start=1):
-                new_ws.cell(row=row_num, column=col_num, value=cell.value)
+                if col_num < len(row): 
+                    new_ws.cell(row=row_num, column=col_num, value=cell.value)
         # usuwanie pustych komórek        
     indeksy_do_usuniecia = []
     for i, wiersz in enumerate(new_ws.iter_rows(), start=1):

@@ -1,4 +1,5 @@
 import smtplib
+import getpass
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -6,9 +7,10 @@ from email import encoders
 import os
 from openpyxl import load_workbook
 
-print(folder_path2)
+
 #tworzenie przypisania klient - mail
 file_to_email = {}
+
 file_to_email_xlsx = {}
 for row in ws.iter_rows(min_row=2, values_only=True):
     key = row[0]
@@ -19,40 +21,49 @@ for row in ws.iter_rows(min_row=2, values_only=True):
         file_to_email_xlsx[key+key2] = value
     elif key is not None and value is None:
         print("Brakuje maila do wysyłki")
-email = "52kchojn@unimot.pl"
-email2 = "Kacper.Chojnacki@unimotbitumen.pl"
-password = "Unimot124!"
-
-server = smtplib.SMTP('smtp.office365.com', 587)
-server.starttls()
+email = input("Podaj login do poczty: ")
+password = getpass.getpass("Podaj hasło: ")
+email2 = input("Podaj adres @,z którego ma być wysłany mail: ")
+email3 = "adres@przykładowy.pl"
 
 
 try:
+    # Nawiąż połączenie z serwerem SMTP
+    server = smtplib.SMTP('smtp.office365.com', 587)
+    server.starttls()
     server.login(email, password)
     print("Logowanie powiodło się.")
 except smtplib.SMTPAuthenticationError:
     print("Logowanie nie powiodło się. Sprawdź swoje dane logowania.")
+
 for filename in os.listdir(folder_path2):
     if filename.endswith(".xlsx") and filename in file_to_email_xlsx:
-        # Utwórz wiadomość e-mail
-        msg = MIMEMultipart()
-        msg['From'] = email2
-        msg['To'] = file_to_email_xlsx[filename]
-        filename_without_extension = filename.split(".xlsx")[0]
-        msg['Subject'] = f"Monitoring realizacji Stałych Kontraktów {filename_without_extension}"
-        body = f"Cześć,\nw załączeniu monitoring dla {filename_without_extension}."
-        msg.attach(MIMEText(body, 'plain'))
-        # Dołącz plik
-        with open(os.path.join(folder_path2, filename), 'rb') as f:
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(f.read())
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition', 'attachment; filename="%s"' % filename)
-        msg.attach(part)
-        # Wyślij wiadomość e-mail
-        server.send_message(msg)
+        try:
+            # Utwórz wiadomość e-mail
+            msg = MIMEMultipart()
+            msg['From'] = email
+            msg['To'] = file_to_email_xlsx[filename]
+            msg['Cc'] = ""
+            filename_without_extension = filename.split(".xlsx")[0]
+            msg['Subject'] = f"Monitoring realizacji {filename_without_extension}"
+            body = f"Cześć,\nw załączeniu monitoring dla {filename_without_extension}. Stan na {yesterday} włącznie.\n\nZ wyrazami szacunku\nBiuro XXXX"
+            msg.attach(MIMEText(body, 'plain'))
+
+            # Dołącz plik
+            with open(os.path.join(folder_path2, filename), 'rb') as f:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(f.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', 'attachment; filename="%s"' % filename)
+            msg.attach(part)
+
+            # Wyślij wiadomość e-mail
+            server.sendmail(email, [file_to_email_xlsx[filename]], msg.as_string())
+            print(f"Pomyślnie wysłano {filename} do {file_to_email_xlsx[filename]}")
+        except smtplib.SMTPRecipientsRefused:
+            print(f"Błąd przy wysyłaniu {filename} do {file_to_email_xlsx[filename]}")
     else:
-        print("Niepomyślnie")
+        print(f"Nie znaleziono odbiorcy dla {filename}")
 
 # Zamknij połączenie SMTP
 server.quit()
